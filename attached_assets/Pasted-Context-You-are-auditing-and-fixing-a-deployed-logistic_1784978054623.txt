@@ -1,0 +1,155 @@
+Context
+
+You are auditing and fixing a deployed logistics platform at premierlogisticsltds.com. Two issues are already confirmed:
+
+Architecture deviation: the deployed build is a Vite-bundled client-side-only React SPA (/assets/index-[hash].js, empty <div id="root">, no server-rendered HTML), not the Next.js 15 App Router app the spec called for. This means crawlers, social-share scrapers, and any browser where the JS bundle fails to load see a completely blank page — including on marketing pages that need to be indexable (Home, Services, Blog, Careers, etc.).
+Accessibility/autofill gap: at least 8 form <input> elements across the site are missing id/name attributes, breaking browser autofill and label association for screen readers.
+
+Your job is to (a) decide and document a position on issue 1, (b) fix issue 2, and (c) run a full functional audit of every feature area below, fixing what's broken and reporting what's missing outright.
+
+Part 1 — Architecture decision
+Confirm whether the CSR/Vite build is an intentional decision or a deployment mistake (was this meant to be next build && next export, or a full Next.js server deploy?).
+If staying with a client-rendered SPA: add a meaningful <noscript> fallback message, and add prerendering/SSG for the public marketing pages at minimum (via a static prerender step, or migrate those routes to a framework with SSR).
+If migrating to Next.js as originally specified: scope that as a separate, tracked migration — don't block the fixes below on it.
+Part 2 — Fix immediately
+Add a unique id and name to every form input site-wide (Login, Register, Book Shipment, Get a Quote, Contact, Track Shipment search, any admin/staff forms). Ensure every <label> uses htmlFor pointing at the matching id.
+Re-run a Lighthouse + axe accessibility pass after the fix and report any remaining violations.
+Part 3 — Full functional audit
+
+For each area, verify against the spec and report Works / Partially Works / Broken / Not Implemented, with reproduction steps for anything not fully working.
+
+Public website
+ All pages resolve with no 404s: Home, About, Services, Industries Served, Coverage Areas, Track Shipment, Book Shipment, Request Quote, Pricing, FAQs, Testimonials, Blog, Careers, Contact, Privacy Policy, Terms
+ Home page sections all present and populated with real (non-lorem-ipsum) content: Hero, Stats, Services, Why Choose Us, How Shipping Works, Tracking Widget, Coverage Map, Testimonials, CTA, Partners, Latest News
+ Mobile responsiveness on every page above (test at 375px, 768px, 1280px)
+Track Shipment
+ Entering a valid tracking number returns: status, progress bar, current location, timeline, sender, receiver, origin, destination, expected delivery, weight, dimensions, service type, shipment history, proof of delivery, QR code, map location
+ Entering an invalid/nonexistent tracking number shows a clear error, not a blank page or unhandled exception
+ Timeline supports and correctly orders unlimited updates, each showing city, country, facility, lat/lng, date, time, description, status
+Customer Portal
+ Registration, login, forgot password (reset email actually sends and the reset link works)
+ Dashboard shows real shipment history, not placeholder data
+ Book Shipment from inside the portal pre-fills known sender info
+ Saved Addresses, Saved Receivers, Invoices, Receipts, Notifications, Support Tickets, Profile — confirm each is present and functional, not a stub page
+Admin Dashboard + Role Management
+ Confirm all 7 roles exist and are enforced: Super Admin, Manager, Operations, Customer Support, Tracking Agent, Driver, Customer
+ Log in as each role and confirm access is correctly restricted — a Tracking Agent shouldn't be able to delete shipments, a Customer shouldn't reach /admin routes at all, etc. Attempt direct URL access to admin routes while logged in as Customer and confirm a 403, not a rendered page.
+ Dashboard Overview, Shipments, Customers, Drivers, Quotes, Invoices, Payments, Reports, Analytics, Staff, Contact Messages, Blog, Settings, System Logs — confirm each screen loads real data and its actions work (create/edit/delete where applicable)
+Driver Dashboard
+ Assigned Deliveries list is accurate per logged-in driver
+ Google Navigation link opens the correct route
+ Accept Delivery, Update Status, Upload Photos, Capture Signature, Delivery Notes, Delivery History all work end-to-end
+Shipment Management
+ Create / Edit / Delete shipment
+ Tracking number auto-generates in the format PL-YYYYMMDD-000001 and is verifiably never duplicated (test by creating multiple shipments same-day)
+ QR code and barcode generate and scan correctly
+ Assign Driver, Assign Vehicle, Shipment Notes, Shipment Documents, Shipment Images all persist correctly
+Search
+ Search works by: tracking number, status, customer, receiver, phone, destination, origin, date, driver — test each filter individually and in combination
+Notifications / Email
+ Automatic emails actually send for: Created, Picked Up, In Transit, Delayed, Delivered, Cancelled (verify with a real inbox, not just a "queued" status in the DB)
+ SMS and WhatsApp hooks — confirm implemented or explicitly flagged as not-yet-wired
+ Email logs show delivery/failure status; failed emails retry
+Quotes / Contact
+ Quote request → Admin can Approve / Reject / Modify / Convert to Shipment
+ Contact form submissions are stored, assignable to staff, and status (New/Open/Resolved/Closed) updates correctly
+Reports / Analytics / Invoicing
+ Daily/Weekly/Monthly shipment reports, Revenue, Customer Growth, Driver Performance, Delivery Success, Failed Deliveries, Popular Routes
+ Export to PDF, Excel, CSV actually produces valid, openable files
+ Charts/graphs/KPIs on the analytics dashboard reflect real data and update
+ Invoices, Receipts, Waybills, Shipping Labels, Delivery Notes generate as downloadable PDFs with correct data
+Proof of Delivery
+ Signature, delivery photo, driver notes, timestamp, and GPS coordinates all capture and display correctly on a delivered shipment
+Maps
+ Google Maps renders on Track Shipment and Coverage Areas
+ Distance, ETA, and route calculate correctly for a sample origin/destination
+Security
+ Confirm Helmet headers, rate limiting, CORS policy, CSRF protection, input validation, and password hashing are active (check response headers and attempt basic injection/XSS payloads in form fields)
+ Confirm JWT access tokens expire and refresh tokens rotate correctly
+ Confirm audit logs record admin actions
+ Confirm automatic backups are configured and documented
+Deliverable
+
+A single report listing every checkbox above as Works / Partially Works / Broken / Not Implemented, with screenshots or console errors for anything not fully working, plus a prioritized fix list (blocking bugs first, then gaps, then polish).
+
+Worked for 30 seconds
+
+Checkpoint made
+2 hours ago
+Auditing and upgrading logistics platform
+
+Auditing and upgrading logistics platform
+That's a substantial audit scope. Let me start the app, explore the codebase in depth, and work through this systematically. I'll get the workflows running first while I explore the code.
+
+
+7 actions
+Need to install dependencies first. Let me do that while doing a deep code audit in parallel.
+
+
+5 actions
+Good — I have the full picture. Now let me fix the accessibility issues and start the app simultaneously.
+
+
+5 actions
+Let me read the remaining files while simultaneously starting the workflows and applying fixes.
+
+
+7 actions
+Now I have a complete picture. Let me start the web workflow and apply all accessibility fixes simultaneously.
+
+
+16 actions
+Both workflows are healthy. Now let me do the comprehensive functional audit — screenshots, API checks, and code inspection all in parallel.
+
+
+7 actions
+Let me complete the audit with remaining checks in parallel.
+
+
+11 actions
+Two critical bugs found: (1) database schema not pushed — every API query fails, (2) tracking returns a raw HTML stack trace instead of a clean 404. Let me fix both, add security headers, and add the <noscript> fallback while I compile the report.
+
+
+4 actions
+Schema is now pushed. The tracking 404 logic exists but was being masked by DB errors. Now let me fix the remaining issues: add Helmet/rate limiting to the API, add a proper error handler, and add the <noscript> fallback — all in parallel.
+
+
+3 actions
+Now let me wire in Helmet + rate limiting + a proper error handler to the API server.
+
+
+8 actions
+API is clean — tracking returns proper JSON 404, Helmet headers are active, X-Powered-By is gone. Let me take a final screenshot and then write the full audit report.
+
+
+3 actions
+Good — the dynamic id={...} template literals in JSX won't match a literal grep string; those edits are correct. Let me now write the complete audit report file, propose follow-up tasks, and mark the task complete.
+
+
+7 actions
+
+Marked task #1 complete
+
+Worked for 10 minutes
+
+Checkpoint made
+26 minutes ago
+add all
+
+26 minutes ago
+Updating active task list
+
+Updating active task list
+Taking on all three tasks. Let me parallelize — fixing the backend issues (Task #4) while exploring the email integration options (Task #3) and starting the marketing pages (Task #2) simultaneously.
+
+
+11 actions
+Now I have everything I need. Let me fix Task #4 backend immediately while launching the marketing-pages subagent and proposing email — all in parallel.
+
+
+7 actions
+Connect Resend
+Resend
+Resend
+Not connected
+Cancelled by the agent.
